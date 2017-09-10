@@ -22,6 +22,8 @@ void setup()
     shoulder.attach(SHOULDER_SERVO_PIN);
     elbow.attach(ELBOW_SERVO_PIN);
     claw.attach(CLAW_SERVO_PIN);
+
+    Serial.println("MeArm initialized");
 }
 
 void loop()
@@ -31,6 +33,14 @@ void loop()
     if (input.length() > 0) {
         if (isServoCommand(input)) {
             executeServoCommand(input);
+        }
+        else if (input == "O") {
+            Serial.println("All servos are rotating to 90 degrees");
+
+            base.write(90);
+            shoulder.write(90);
+            elbow.write(90);
+            claw.write(90);
         }
     }
 }
@@ -61,24 +71,24 @@ boolean isServoCommand(String command)
 
 void executeServoCommand(String command)
 {
-    Servo servo;
+    Servo *servo;
 
     // Determine what servo will be moved
     switch (command[0]) {
         case 'B':
-            servo = base;
+            servo = &base;
             Serial.print("Base");
             break;
         case 'S':
-            servo = shoulder;
+            servo = &shoulder;
             Serial.print("Shoulder");
             break;
         case 'E':
-            servo = elbow;
+            servo = &elbow;
             Serial.print("Elbow");
             break;
         case 'C':
-            servo = claw;
+            servo = &claw;
             Serial.print("Claw");
             break;
         default:
@@ -98,6 +108,6 @@ void executeServoCommand(String command)
     Serial.print(val);
     Serial.println(" degrees");
 
-    servo.write(val);
+    servo->write(val);
 }
 
