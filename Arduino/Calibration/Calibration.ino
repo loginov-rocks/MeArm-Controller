@@ -12,6 +12,8 @@ Servo base,
       elbow,
       claw;
 
+String inputBuffer = "";
+
 void setup()
 {
     Serial.begin(PC_SERIAL_BAUDRATE);
@@ -24,18 +26,78 @@ void setup()
 
 void loop()
 {
-    Serial.print("Base is at ");
-    Serial.println(base.read());
+    String input = getInput();
 
-    Serial.print("Shoulder is at ");
-    Serial.println(shoulder.read());
+    if (input.length() > 0) {
+        if (isServoCommand(input)) {
+            executeServoCommand(input);
+        }
+    }
+}
 
-    Serial.print("Elbow is at ");
-    Serial.println(elbow.read());
+String getInput()
+{
+    String input = "";
 
-    Serial.print("Claw is at ");
-    Serial.println(claw.read());
+    if (Serial.available()) {
+        char c = Serial.read();
 
-    delay(1000);
+        if (c == '\n') {
+            input = inputBuffer;
+            inputBuffer = "";
+        }
+        else {
+            inputBuffer += c;
+        }
+    }
+
+    return input;
+}
+
+boolean isServoCommand(String command)
+{
+    return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'C');
+}
+
+void executeServoCommand(String command)
+{
+    Servo servo;
+
+    // Determine what servo will be moved
+    switch (command[0]) {
+        case 'B':
+            servo = base;
+            Serial.print("Base");
+            break;
+        case 'S':
+            servo = shoulder;
+            Serial.print("Shoulder");
+            break;
+        case 'E':
+            servo = elbow;
+            Serial.print("Elbow");
+            break;
+        case 'C':
+            servo = claw;
+            Serial.print("Claw");
+            break;
+        default:
+            return;
+    }
+
+    // Get integer value from command string after the first character
+    int val = command.substring(1).toInt();
+
+    // Validate the value
+    if (val < 0 || val > 180) {
+        Serial.println(" is not rotating because of incorrect angle");
+        return;
+    }
+
+    Serial.print(" is rotating to ");
+    Serial.print(val);
+    Serial.println(" degrees");
+
+    servo.write(val);
 }
 
