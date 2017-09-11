@@ -6,7 +6,7 @@
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
 #define ELBOW_SERVO_PIN     6
-#define GRIPPER_SERVO_PIN      11
+#define GRIPPER_SERVO_PIN   11
 
 meArm arm(137, 47,  -pi / 4, pi / 4,     // base
           133, 39,  pi / 4,  3 * pi / 4, // shoulder
@@ -77,8 +77,8 @@ void executeCoordinateCommand(String command)
           y = arm.getY(),
           z = arm.getZ();
 
-    // Get integer value from command string after the first character
-    int val = command.substring(1).toInt();
+    // Get float value from command string after the first character
+    float val = command.substring(1).toFloat();
 
     // Determine what coordinate will be changed
     switch (command[0]) {

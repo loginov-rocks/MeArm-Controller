@@ -5,7 +5,7 @@
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
 #define ELBOW_SERVO_PIN     6
-#define GRIPPER_SERVO_PIN      11
+#define GRIPPER_SERVO_PIN   11
 
 Servo base,
       shoulder,
