@@ -29,8 +29,8 @@ void loop()
     String input = getInput();
 
     if (input.length() > 0) {
-        if (isCoordinateCommand(input)) {
-            executeCoordinateCommand(input);
+        if (isCylindricalCommand(input)) {
+            executeCylindricalCommand(input);
         }
         else if (input == "g") {
             Serial.println("Opening the gripper");
@@ -42,7 +42,7 @@ void loop()
         }
         else if (input == "O") {
             Serial.println("Going to the home point");
-            arm.gotoPoint(0.0, 100.0, 50.0);
+            arm.gotoPointCylinder(0.0, 100.0, 50.0);
         }
     }
 }
@@ -66,27 +66,27 @@ String getInput()
     return input;
 }
 
-boolean isCoordinateCommand(String command)
+boolean isCylindricalCommand(String command)
 {
-    return (command[0] == 'X' || command[0] == 'Y' || command[0] == 'Z');
+    return (command[0] == 'R' || command[0] == 'P' || command[0] == 'Z');
 }
 
-void executeCoordinateCommand(String command)
+void executeCylindricalCommand(String command)
 {
-    float x = arm.getX(),
-          y = arm.getY(),
-          z = arm.getZ();
+    float rho = arm.getR(),
+          phi = arm.getTheta(),
+          z   = arm.getZ();
 
     // Get integer value from command string after the first character
     int val = command.substring(1).toInt();
 
     // Determine what coordinate will be changed
     switch (command[0]) {
-        case 'X':
-            x = val;
+        case 'R':
+            rho = val;
             break;
-        case 'Y':
-            y = val;
+        case 'P':
+            phi = val;
             break;
         case 'Z':
             z = val;
@@ -95,21 +95,14 @@ void executeCoordinateCommand(String command)
             return;
     }
 
-    Serial.print("Going to the point (");
-    Serial.print(x);
+    Serial.print("Going to the cylindrical point (");
+    Serial.print(rho);
     Serial.print(", ");
-    Serial.print(y);
+    Serial.print(phi);
     Serial.print(", ");
     Serial.print(z);
-    Serial.print(")");
+    Serial.println(")");
 
-    if (arm.isReachable(x, y, z)) {
-        Serial.println();
-    }
-    else {
-        Serial.println(", which is not reachable");
-    }
-
-    arm.gotoPoint(x, y, z);
+    arm.gotoPointCylinder(phi, rho, z);
 }
 
