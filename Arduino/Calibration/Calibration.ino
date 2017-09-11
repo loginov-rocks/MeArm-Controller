@@ -5,12 +5,12 @@
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
 #define ELBOW_SERVO_PIN     6
-#define CLAW_SERVO_PIN      11
+#define GRIPPER_SERVO_PIN      11
 
 Servo base,
       shoulder,
       elbow,
-      claw;
+      gripper;
 
 String inputBuffer = "";
 
@@ -21,7 +21,7 @@ void setup()
     base.attach(BASE_SERVO_PIN);
     shoulder.attach(SHOULDER_SERVO_PIN);
     elbow.attach(ELBOW_SERVO_PIN);
-    claw.attach(CLAW_SERVO_PIN);
+    gripper.attach(GRIPPER_SERVO_PIN);
 
     Serial.println("MeArm initialized");
 }
@@ -40,7 +40,7 @@ void loop()
             base.write(90);
             shoulder.write(90);
             elbow.write(90);
-            claw.write(90);
+            gripper.write(90);
         }
     }
 }
@@ -66,7 +66,7 @@ String getInput()
 
 boolean isServoCommand(String command)
 {
-    return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'C');
+    return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'G');
 }
 
 void executeServoCommand(String command)
@@ -87,9 +87,9 @@ void executeServoCommand(String command)
             servo = &elbow;
             Serial.print("Elbow");
             break;
-        case 'C':
-            servo = &claw;
-            Serial.print("Claw");
+        case 'G':
+            servo = &gripper;
+            Serial.print("Gripper");
             break;
         default:
             return;
