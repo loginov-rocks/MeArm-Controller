@@ -8,6 +8,11 @@
 #define ELBOW_SERVO_PIN     6
 #define GRIPPER_SERVO_PIN   11
 
+typedef enum {
+    SERVOS,
+    COORDINATES
+} mode_t;
+
 Servo base,
       shoulder,
       elbow,
@@ -20,14 +25,14 @@ meArm arm(137, 47,  -pi / 4, pi / 4,     // base
 
 String inputBuffer = "";
 
-byte mode = 1;
+mode_t mode = SERVOS;
 
 void setup()
 {
     Serial.begin(PC_SERIAL_BAUDRATE);
 
     switch (mode) {
-        case 2:
+        case COORDINATES:
             setupCoordinatesMode();
             break;
         default:
@@ -44,20 +49,20 @@ void loop()
 
     if (input.length() > 0) {
         if (isServoCommand(input)) {
-            switchMode(1);
+            switchMode(SERVOS);
             executeServoCommand(input);
         }
         else if (isCoordinateCommand(input)) {
-            switchMode(2);
+            switchMode(COORDINATES);
             executeCoordinateCommand(input);
         }
         else if (input == "c") {
-            switchMode(2);
+            switchMode(COORDINATES);
             Serial.println("Opening the gripper");
             arm.openGripper();
         }
         else if (input == "C") {
-            switchMode(2);
+            switchMode(COORDINATES);
             Serial.println("Closing the gripper");
             arm.closeGripper();
         }
@@ -90,17 +95,17 @@ void disarmCoordinatesMode()
     arm.end();
 }
 
-boolean switchMode(byte targetMode)
+boolean switchMode(mode_t targetMode)
 {
     if (targetMode == mode) {
         return false;
     }
 
     switch (mode) {
-        case 1:
+        case SERVOS:
             disarmServosMode();
             break;
-        case 2:
+        case COORDINATES:
             disarmCoordinatesMode();
             break;
         default:
@@ -108,10 +113,12 @@ boolean switchMode(byte targetMode)
     }
 
     switch (targetMode) {
-        case 1:
+        case SERVOS:
+            Serial.println("Switching to the servos mode");
             setupServosMode();
             break;
-        case 2:
+        case COORDINATES:
+            Serial.println("Switching to the coordinates mode");
             setupCoordinatesMode();
             break;
         default:
