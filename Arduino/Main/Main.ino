@@ -66,6 +66,9 @@ void loop()
             Serial.println("Closing the gripper");
             arm.closeGripper();
         }
+        else if (input == "D") {
+            Serial.println(getCurrentModeData());
+        }
     }
 }
 
@@ -241,5 +244,47 @@ void executeCoordinateCommand(String command)
     }
 
     arm.gotoPoint(x, y, z);
+}
+
+String getCurrentModeData()
+{
+    switch (mode) {
+        case SERVOS:
+            return "DATA:MODE=SERVOS," + getServosModeData();
+        case COORDINATES:
+            return "DATA:MODE=COORDINATES," + getCoordinatesModeData();
+        default:
+            return "DATA:MODE=UNKNOWN";
+    }
+}
+
+String getServosModeData()
+{
+    String data;
+
+    data += "B=";
+    data += base.read();
+    data += ",S=";
+    data += shoulder.read();
+    data += ",E=";
+    data += elbow.read();
+    data += ",G=";
+    data += gripper.read();
+
+    return data;
+}
+
+String getCoordinatesModeData()
+{
+    String data;
+
+    data += "X=";
+    data += arm.getX();
+    data += ",Y=";
+    data += arm.getY();
+    data += ",Z=";
+    data += arm.getZ();
+
+    return data;
 }
 
