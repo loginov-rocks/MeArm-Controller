@@ -2,6 +2,7 @@
 #include <meArm.h>
 
 #define PC_SERIAL_BAUDRATE  115200
+#define BT_SERIAL_BAUDRATE  38400
 
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
@@ -29,7 +30,7 @@ mode_t mode = SERVOS;
 
 void setup()
 {
-    Serial.begin(PC_SERIAL_BAUDRATE);
+    Serial.begin(BT_SERIAL_BAUDRATE);
 
     switch (mode) {
         case COORDINATES:
@@ -144,7 +145,7 @@ String getInput()
             input = inputBuffer;
             inputBuffer = "";
         }
-        else {
+        else if (c != '\r') {
             inputBuffer += c;
         }
     }
