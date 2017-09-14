@@ -2,7 +2,7 @@
 #include <meArm.h>
 
 #define PC_SERIAL_BAUDRATE  115200
-#define BT_SERIAL_BAUDRATE  38400
+#define BT_SERIAL_BAUDRATE  9600
 
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
