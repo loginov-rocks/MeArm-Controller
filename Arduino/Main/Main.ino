@@ -138,14 +138,15 @@ String getInput()
 {
     String input = "";
 
-    if (Serial.available()) {
+    while (Serial.available()) {
         char c = Serial.read();
 
         if (c == '\n') {
             input = inputBuffer;
+            input.trim();
             inputBuffer = "";
         }
-        else if (c != '\r') {
+        else if (c) {
             inputBuffer += c;
         }
     }
