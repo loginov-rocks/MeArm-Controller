@@ -1,6 +1,10 @@
+/**
+ * https://github.com/1oginov/MeArm-Controller/tree/master/Arduino/Servos/Servos.ino
+ */
+
 #include <Servo.h>
 
-#define PC_SERIAL_BAUDRATE  115200
+#define SERIAL_BAUDRATE     9600
 
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
@@ -12,11 +16,11 @@ Servo base,
       elbow,
       gripper;
 
-String inputBuffer = "";
+String readBuffer = "";
 
 void setup()
 {
-    Serial.begin(PC_SERIAL_BAUDRATE);
+    Serial.begin(SERIAL_BAUDRATE);
 
     base.attach(BASE_SERVO_PIN);
     shoulder.attach(SHOULDER_SERVO_PIN);
@@ -49,15 +53,16 @@ String getInput()
 {
     String input = "";
 
-    if (Serial.available()) {
+    while (Serial.available()) {
         char c = Serial.read();
 
         if (c == '\n') {
-            input = inputBuffer;
-            inputBuffer = "";
+            input = readBuffer;
+            input.trim();
+            readBuffer = "";
         }
-        else {
-            inputBuffer += c;
+        else if (c) {
+            readBuffer += c;
         }
     }
 

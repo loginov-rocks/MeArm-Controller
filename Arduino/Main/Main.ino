@@ -1,8 +1,11 @@
+/**
+ * https://github.com/1oginov/MeArm-Controller/tree/master/Arduino/Main/Main.ino
+ */
+
 #include <Servo.h>
 #include <meArm.h>
 
-#define PC_SERIAL_BAUDRATE  115200
-#define BT_SERIAL_BAUDRATE  38400
+#define SERIAL_BAUDRATE     9600
 
 #define BASE_SERVO_PIN      9
 #define SHOULDER_SERVO_PIN  10
@@ -24,13 +27,13 @@ meArm arm(137, 47,  -pi / 4, pi / 4,     // base
           145, 94,  0,       -pi / 4,    // elbow
           80,  120, pi / 2,  0);         // gripper
 
-String inputBuffer = "";
+String readBuffer = "";
 
 mode_t mode = SERVOS;
 
 void setup()
 {
-    Serial.begin(BT_SERIAL_BAUDRATE);
+    Serial.begin(SERIAL_BAUDRATE);
 
     switch (mode) {
         case COORDINATES:
@@ -138,15 +141,16 @@ String getInput()
 {
     String input = "";
 
-    if (Serial.available()) {
+    while (Serial.available()) {
         char c = Serial.read();
 
         if (c == '\n') {
-            input = inputBuffer;
-            inputBuffer = "";
+            input = readBuffer;
+            input.trim();
+            readBuffer = "";
         }
-        else if (c != '\r') {
-            inputBuffer += c;
+        else if (c) {
+            readBuffer += c;
         }
     }
 
