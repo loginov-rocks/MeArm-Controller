@@ -1,0 +1,5 @@
+node_modules/
+
+# IntelliJ IDEA
+.idea/dictionaries/
+.idea/workspace.xml
