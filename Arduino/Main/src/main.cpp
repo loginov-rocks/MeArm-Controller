@@ -1,47 +1,58 @@
-/**
- * https://github.com/1oginov/MeArm-Controller/tree/master/Arduino/Main/Main.ino
- */
-
-#include <Servo.h>
+#include <Arduino.h>
 #include <meArm.h>
+#include <Servo.h>
 
-#define SERIAL_BAUDRATE     9600
+#define SERIAL_BAUDRATE 9600
 
-#define BASE_SERVO_PIN      9
-#define SHOULDER_SERVO_PIN  10
-#define ELBOW_SERVO_PIN     6
-#define GRIPPER_SERVO_PIN   11
+#define BASE_SERVO_PIN 9
+#define SHOULDER_SERVO_PIN 10
+#define ELBOW_SERVO_PIN 6
+#define GRIPPER_SERVO_PIN 11
 
-typedef enum {
+typedef enum
+{
     SERVOS,
     COORDINATES
 } mode_t;
 
-Servo base,
-      shoulder,
-      elbow,
-      gripper;
+Servo base, shoulder, elbow, gripper;
 
-meArm arm(137, 47,  -pi / 4, pi / 4,     // base
-          133, 39,  pi / 4,  3 * pi / 4, // shoulder
-          145, 94,  0,       -pi / 4,    // elbow
-          80,  120, pi / 2,  0);         // gripper
+meArm arm(137, 47, -pi / 4, pi / 4,    // base
+          133, 39, pi / 4, 3 * pi / 4, // shoulder
+          145, 94, 0, -pi / 4,         // elbow
+          80, 120, pi / 2, 0);         // gripper
 
 String readBuffer = "";
 
 mode_t mode = SERVOS;
 
+void setupServosMode();
+void disarmServosMode();
+void setupCoordinatesMode();
+void disarmCoordinatesMode();
+boolean switchMode(mode_t);
+String getInput();
+boolean isServoCommand(String);
+boolean isCoordinateCommand(String);
+void executeServoCommand(String);
+void executeCoordinateCommand(String);
+String getCurrentModeData();
+String getServosModeData();
+String getCoordinatesModeData();
+
 void setup()
 {
     Serial.begin(SERIAL_BAUDRATE);
 
-    switch (mode) {
-        case COORDINATES:
-            setupCoordinatesMode();
-            break;
-        default:
-            setupServosMode();
-            break;
+    switch (mode)
+    {
+    case COORDINATES:
+        setupCoordinatesMode();
+        break;
+
+    default:
+        setupServosMode();
+        break;
     }
 
     Serial.println("MeArm initialized");
@@ -51,26 +62,32 @@ void loop()
 {
     String input = getInput();
 
-    if (input.length() > 0) {
-        if (isServoCommand(input)) {
+    if (input.length() > 0)
+    {
+        if (isServoCommand(input))
+        {
             switchMode(SERVOS);
             executeServoCommand(input);
         }
-        else if (isCoordinateCommand(input)) {
+        else if (isCoordinateCommand(input))
+        {
             switchMode(COORDINATES);
             executeCoordinateCommand(input);
         }
-        else if (input == "c") {
+        else if (input == "c")
+        {
             switchMode(COORDINATES);
             Serial.println("Opening the gripper");
             arm.openGripper();
         }
-        else if (input == "C") {
+        else if (input == "C")
+        {
             switchMode(COORDINATES);
             Serial.println("Closing the gripper");
             arm.closeGripper();
         }
-        else if (input == "D") {
+        else if (input == "D")
+        {
             Serial.println(getCurrentModeData());
         }
     }
@@ -104,32 +121,39 @@ void disarmCoordinatesMode()
 
 boolean switchMode(mode_t targetMode)
 {
-    if (targetMode == mode) {
+    if (targetMode == mode)
+    {
         return false;
     }
 
-    switch (mode) {
-        case SERVOS:
-            disarmServosMode();
-            break;
-        case COORDINATES:
-            disarmCoordinatesMode();
-            break;
-        default:
-            return false;
+    switch (mode)
+    {
+    case SERVOS:
+        disarmServosMode();
+        break;
+
+    case COORDINATES:
+        disarmCoordinatesMode();
+        break;
+
+    default:
+        return false;
     }
 
-    switch (targetMode) {
-        case SERVOS:
-            Serial.println("Switching to the servos mode");
-            setupServosMode();
-            break;
-        case COORDINATES:
-            Serial.println("Switching to the coordinates mode");
-            setupCoordinatesMode();
-            break;
-        default:
-            return false;
+    switch (targetMode)
+    {
+    case SERVOS:
+        Serial.println("Switching to the servos mode");
+        setupServosMode();
+        break;
+
+    case COORDINATES:
+        Serial.println("Switching to the coordinates mode");
+        setupCoordinatesMode();
+        break;
+
+    default:
+        return false;
     }
 
     mode = targetMode;
@@ -141,15 +165,18 @@ String getInput()
 {
     String input = "";
 
-    while (Serial.available()) {
+    while (Serial.available())
+    {
         char c = Serial.read();
 
-        if (c == '\n') {
+        if (c == '\n')
+        {
             input = readBuffer;
             input.trim();
             readBuffer = "";
         }
-        else if (c) {
+        else if (c)
+        {
             readBuffer += c;
         }
     }
@@ -171,33 +198,39 @@ void executeServoCommand(String command)
 {
     Servo *servo;
 
-    // Determine what servo will be moved
-    switch (command[0]) {
-        case 'B':
-            servo = &base;
-            Serial.print("Base");
-            break;
-        case 'S':
-            servo = &shoulder;
-            Serial.print("Shoulder");
-            break;
-        case 'E':
-            servo = &elbow;
-            Serial.print("Elbow");
-            break;
-        case 'G':
-            servo = &gripper;
-            Serial.print("Gripper");
-            break;
-        default:
-            return;
+    // Determine what servo will be moved.
+    switch (command[0])
+    {
+    case 'B':
+        servo = &base;
+        Serial.print("Base");
+        break;
+
+    case 'S':
+        servo = &shoulder;
+        Serial.print("Shoulder");
+        break;
+
+    case 'E':
+        servo = &elbow;
+        Serial.print("Elbow");
+        break;
+
+    case 'G':
+        servo = &gripper;
+        Serial.print("Gripper");
+        break;
+
+    default:
+        return;
     }
 
-    // Get integer value from command string after the first character
+    // Get integer value from command string after the first character.
     int val = command.substring(1).toInt();
 
-    // Validate the value
-    if (val < 0 || val > 180) {
+    // Validate the value.
+    if (val < 0 || val > 180)
+    {
         Serial.println(" is not rotating because of incorrect angle");
         return;
     }
@@ -215,22 +248,23 @@ void executeCoordinateCommand(String command)
           y = arm.getY(),
           z = arm.getZ();
 
-    // Get float value from command string after the first character
+    // Get float value from command string after the first character.
     float val = command.substring(1).toFloat();
 
-    // Determine what coordinate will be changed
-    switch (command[0]) {
-        case 'X':
-            x = val;
-            break;
-        case 'Y':
-            y = val;
-            break;
-        case 'Z':
-            z = val;
-            break;
-        default:
-            return;
+    // Determine what coordinate will be changed.
+    switch (command[0])
+    {
+    case 'X':
+        x = val;
+        break;
+    case 'Y':
+        y = val;
+        break;
+    case 'Z':
+        z = val;
+        break;
+    default:
+        return;
     }
 
     Serial.print("Going to the point (");
@@ -241,10 +275,12 @@ void executeCoordinateCommand(String command)
     Serial.print(z);
     Serial.print(")");
 
-    if (arm.isReachable(x, y, z)) {
+    if (arm.isReachable(x, y, z))
+    {
         Serial.println();
     }
-    else {
+    else
+    {
         Serial.println(", which is not reachable");
     }
 
@@ -253,13 +289,14 @@ void executeCoordinateCommand(String command)
 
 String getCurrentModeData()
 {
-    switch (mode) {
-        case SERVOS:
-            return "DATA:MODE=SERVOS," + getServosModeData();
-        case COORDINATES:
-            return "DATA:MODE=COORDINATES," + getCoordinatesModeData();
-        default:
-            return "DATA:MODE=UNKNOWN";
+    switch (mode)
+    {
+    case SERVOS:
+        return "DATA:MODE=SERVOS," + getServosModeData();
+    case COORDINATES:
+        return "DATA:MODE=COORDINATES," + getCoordinatesModeData();
+    default:
+        return "DATA:MODE=UNKNOWN";
     }
 }
 
@@ -292,4 +329,3 @@ String getCoordinatesModeData()
 
     return data;
 }
-
