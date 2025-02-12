@@ -1,14 +1,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-#define SERIAL_BAUDRATE 9600
-
-#define BASE_SERVO_PIN 9
-#define SHOULDER_SERVO_PIN 10
-#define ELBOW_SERVO_PIN 6
-#define GRIPPER_SERVO_PIN 11
-
-Servo base, shoulder, elbow, gripper;
+Servo base, shoulder, elbow, claw;
 
 String readBuffer = "";
 
@@ -18,110 +11,110 @@ void executeServoCommand(String);
 
 void setup()
 {
-    Serial.begin(SERIAL_BAUDRATE);
+  Serial.begin(9600);
 
-    base.attach(BASE_SERVO_PIN);
-    shoulder.attach(SHOULDER_SERVO_PIN);
-    elbow.attach(ELBOW_SERVO_PIN);
-    gripper.attach(GRIPPER_SERVO_PIN);
+  base.attach(6);
+  shoulder.attach(9);
+  elbow.attach(10);
+  claw.attach(11);
 
-    Serial.println("MeArm initialized");
+  Serial.println("Setup complete");
 }
 
 void loop()
 {
-    String input = getInput();
+  String input = getInput();
 
-    if (input.length() > 0)
+  if (input.length() > 0)
+  {
+    if (isServoCommand(input))
     {
-        if (isServoCommand(input))
-        {
-            executeServoCommand(input);
-        }
-        else if (input == "O")
-        {
-            Serial.println("All servos are rotating to 90 degrees");
-
-            base.write(90);
-            shoulder.write(90);
-            elbow.write(90);
-            gripper.write(90);
-        }
+      executeServoCommand(input);
     }
+    else if (input == "O")
+    {
+      Serial.println("All servos are rotating to 90 degrees");
+
+      base.write(90);
+      shoulder.write(90);
+      elbow.write(90);
+      claw.write(90);
+    }
+  }
 }
 
 String getInput()
 {
-    String input = "";
+  String input = "";
 
-    while (Serial.available())
+  while (Serial.available())
+  {
+    char c = Serial.read();
+
+    if (c == '\n')
     {
-        char c = Serial.read();
-
-        if (c == '\n')
-        {
-            input = readBuffer;
-            input.trim();
-            readBuffer = "";
-        }
-        else if (c)
-        {
-            readBuffer += c;
-        }
+      input = readBuffer;
+      input.trim();
+      readBuffer = "";
     }
+    else if (c)
+    {
+      readBuffer += c;
+    }
+  }
 
-    return input;
+  return input;
 }
 
 boolean isServoCommand(String command)
 {
-    return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'G');
+  return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'C');
 }
 
 void executeServoCommand(String command)
 {
-    Servo *servo;
+  Servo *servo;
 
-    // Determine what servo will be moved.
-    switch (command[0])
-    {
-    case 'B':
-        servo = &base;
-        Serial.print("Base");
-        break;
+  // Determine what servo will be moved.
+  switch (command[0])
+  {
+  case 'B':
+    servo = &base;
+    Serial.print("Base");
+    break;
 
-    case 'S':
-        servo = &shoulder;
-        Serial.print("Shoulder");
-        break;
+  case 'S':
+    servo = &shoulder;
+    Serial.print("Shoulder");
+    break;
 
-    case 'E':
-        servo = &elbow;
-        Serial.print("Elbow");
-        break;
+  case 'E':
+    servo = &elbow;
+    Serial.print("Elbow");
+    break;
 
-    case 'G':
-        servo = &gripper;
-        Serial.print("Gripper");
-        break;
+  case 'C':
+    servo = &claw;
+    Serial.print("Claw");
+    break;
 
-    default:
-        return;
-    }
+  default:
+    return;
+  }
 
-    // Get integer value from command string after the first character.
-    int val = command.substring(1).toInt();
+  // Get integer value from command string after the first character.
+  int val = command.substring(1).toInt();
 
-    // Validate the value.
-    if (val < 0 || val > 180)
-    {
-        Serial.println(" is not rotating because of incorrect angle");
-        return;
-    }
+  // Validate the value.
+  if (val < 0 || val > 180)
+  {
+    Serial.println(" is not rotating because of incorrect angle");
+    return;
+  }
 
-    Serial.print(" is rotating to ");
-    Serial.print(val);
-    Serial.println(" degrees");
+  Serial.print(" is rotating to ");
+  Serial.print(val);
+  Serial.println(" degrees");
 
-    servo->write(val);
+  servo->write(val);
 }
