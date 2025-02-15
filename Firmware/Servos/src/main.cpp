@@ -1,6 +1,10 @@
 #include <Arduino.h>
 #include <Servo.h>
 
+#include "Button.h"
+
+Button button(2);
+
 Servo base, shoulder, elbow, claw;
 
 // readSerial helpers.
@@ -70,6 +74,12 @@ void loop()
     }
 
     Serial.println();
+  }
+
+  // React to button clicks.
+  if (button.wasClicked())
+  {
+    Serial.println("Button clicked");
   }
 }
 
