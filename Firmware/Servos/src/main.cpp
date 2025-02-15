@@ -3,11 +3,19 @@
 
 Servo base, shoulder, elbow, claw;
 
-String readBuffer = "";
+// readSerial helpers.
+const size_t readSerialBufferSize = 16; // Should be large enough to accommodate a command.
+char readSerialBuffer[readSerialBufferSize];
+size_t readSerialBufferIndex = 0;
 
-String getInput();
-boolean isServoCommand(String);
-void executeServoCommand(String);
+char *readSerial();
+
+struct ServoCommand
+{
+  Servo *servo;
+  int angle;
+};
+ServoCommand *parseServoCommand(const char *);
 
 void setup()
 {
@@ -19,102 +27,151 @@ void setup()
   claw.attach(11);
 
   Serial.println("Setup complete");
+  Serial.println();
+  Serial.println("Commands:");
+  Serial.println("  <servo> <angle> - move a servo to an angle (from 0 to 180), for example:");
+  Serial.println("    Base 10");
+  Serial.println("    Shoulder 20");
+  Serial.println("    Elbow 30");
+  Serial.println("    Claw 45");
+  Serial.println("  RESET - move all servos to default angle");
+  Serial.println();
 }
 
 void loop()
 {
-  String input = getInput();
+  char *input = readSerial();
 
-  if (input.length() > 0)
+  if (input != nullptr)
   {
-    if (isServoCommand(input))
+    Serial.print("< ");
+    Serial.println(input);
+
+    if (strcmp(input, "RESET") == 0)
     {
-      executeServoCommand(input);
-    }
-    else if (input == "O")
-    {
-      Serial.println("All servos are rotating to 90 degrees");
+      Serial.println("Moving all servos to default angle...");
 
       base.write(90);
       shoulder.write(90);
       elbow.write(90);
-      claw.write(90);
+      claw.write(25);
+
+      Serial.println("Success!");
     }
+    else
+    {
+      ServoCommand *command = parseServoCommand(input);
+
+      if (command != nullptr)
+      {
+        command->servo->write(command->angle);
+        Serial.println("Success!");
+      }
+    }
+
+    Serial.println();
   }
 }
 
-String getInput()
+/**
+ * Reads characters from the serial input, ignoring leading and trimming trailing spaces. The function returns a
+ * null-terminated string of characters received up to the first newline character ('\n'). If no data is available or
+ * the input buffer is empty, it returns a null pointer.
+ */
+char *readSerial()
 {
-  String input = "";
-
   while (Serial.available())
   {
-    char c = Serial.read();
+    char inputChar = Serial.read();
 
-    if (c == '\n')
+    // Ignore leading spaces.
+    if (readSerialBufferIndex == 0 && isspace(inputChar))
     {
-      input = readBuffer;
-      input.trim();
-      readBuffer = "";
+      continue;
     }
-    else if (c)
+
+    Serial.print(inputChar);
+
+    // Exit when a new line is received.
+    if (inputChar == '\n')
     {
-      readBuffer += c;
+      // Trim trailing spaces.
+      while (readSerialBufferIndex > 0 && isspace(readSerialBuffer[readSerialBufferIndex - 1]))
+      {
+        readSerialBufferIndex--;
+      }
+
+      // Null-terminate the buffer and reset the index.
+      readSerialBuffer[readSerialBufferIndex] = '\0';
+      readSerialBufferIndex = 0;
+
+      return readSerialBuffer;
+    }
+
+    if (readSerialBufferIndex < readSerialBufferSize - 1)
+    {
+      readSerialBuffer[readSerialBufferIndex++] = inputChar;
     }
   }
 
-  return input;
+  return nullptr;
 }
 
-boolean isServoCommand(String command)
+/**
+ * Parses a command string to identify the servo (Base, Shoulder, Elbow, or Claw) and the desired angle (0-180
+ * degrees). If valid, returns a pointer to the corresponding Servo object and the angle. If the command or angle is
+ * invalid, it prints an error message and returns a `nullptr` and `-1`.
+ */
+ServoCommand *parseServoCommand(const char *command)
 {
-  return (command[0] == 'B' || command[0] == 'S' || command[0] == 'E' || command[0] == 'C');
-}
+  static ServoCommand output;
+  char name[16]; // Should be large enough to accommodate the servo name.
+  int angle;
 
-void executeServoCommand(String command)
-{
-  Servo *servo;
-
-  // Determine what servo will be moved.
-  switch (command[0])
+  if (sscanf(command, "%s %d", name, &angle) != 2)
   {
-  case 'B':
-    servo = &base;
-    Serial.print("Base");
-    break;
+    Serial.println("ERROR: Unknown command!");
 
-  case 'S':
-    servo = &shoulder;
-    Serial.print("Shoulder");
-    break;
-
-  case 'E':
-    servo = &elbow;
-    Serial.print("Elbow");
-    break;
-
-  case 'C':
-    servo = &claw;
-    Serial.print("Claw");
-    break;
-
-  default:
-    return;
+    return nullptr;
   }
 
-  // Get integer value from command string after the first character.
-  int val = command.substring(1).toInt();
-
-  // Validate the value.
-  if (val < 0 || val > 180)
+  if (strcmp(name, "Base") == 0)
   {
-    Serial.println(" is not rotating because of incorrect angle");
-    return;
+    output.servo = &base;
+  }
+  else if (strcmp(name, "Shoulder") == 0)
+  {
+    output.servo = &shoulder;
+  }
+  else if (strcmp(name, "Elbow") == 0)
+  {
+    output.servo = &elbow;
+  }
+  else if (strcmp(name, "Claw") == 0)
+  {
+    output.servo = &claw;
+  }
+  else
+  {
+    Serial.println("ERROR: Unknown servo!");
+
+    return nullptr;
   }
 
-  Serial.print(" is rotating to ");
-  Serial.print(val);
-  Serial.println(" degrees");
+  if (angle < 0 || angle > 180)
+  {
+    Serial.println("ERROR: Invalid angle!");
 
-  servo->write(val);
+    return nullptr;
+  }
+
+  output.angle = angle;
+
+  Serial.print("Moving servo \"");
+  Serial.print(name);
+  Serial.print("\" to ");
+  Serial.print(angle);
+  Serial.println("°...");
+
+  return &output;
 }
