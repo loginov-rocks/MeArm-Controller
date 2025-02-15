@@ -8,29 +8,25 @@ class Calibrator
 {
 public:
   ~Calibrator();
-  void attachServo(int, const char *);
+
+  void attachServo(int, const char *, int);
   void cycleServo();
   void setAngle(int);
+  void setAngle(const char *, int);
+  void resetServos();
 
 private:
   struct ServoNode
   {
     int pin;
     char *name;
+    int defaultAngle;
+
     Servo servo;
     ServoNode *next;
 
-    ServoNode(int pin, const char *name) : pin(pin), next(nullptr)
-    {
-      strcpy(this->name, name);
-      this->servo.attach(this->pin);
-    }
-
-    ~ServoNode()
-    {
-      delete[] this->name;
-      servo.detach();
-    }
+    ServoNode(int, const char *, int);
+    ~ServoNode();
   };
 
   ServoNode *headNode = nullptr;

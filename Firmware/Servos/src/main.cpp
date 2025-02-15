@@ -2,12 +2,12 @@
 #include <Servo.h>
 
 #include "Button.h"
+#include "Calibrator.h"
 #include "Potentiometer.h"
 
 Button button(2);
+Calibrator calibrator;
 Potentiometer potentiometer(A0);
-
-Servo base, shoulder, elbow, claw;
 
 // readSerial helpers.
 const size_t readSerialBufferSize = 16; // Should be large enough to accommodate a command.
@@ -16,25 +16,24 @@ size_t readSerialBufferIndex = 0;
 
 char *readSerial();
 
-struct ServoCommand
-{
-  Servo *servo;
-  int angle;
-};
-ServoCommand *parseServoCommand(const char *);
-
 void setup()
 {
   Serial.begin(9600);
 
-  base.attach(6);
-  shoulder.attach(9);
-  elbow.attach(10);
-  claw.attach(11);
+  Serial.println("Setting up...");
+  Serial.println();
+
+  calibrator.attachServo(6, "Base", 90);
+  calibrator.attachServo(9, "Shoulder", 90);
+  calibrator.attachServo(10, "Elbow", 90);
+  calibrator.attachServo(11, "Claw", 25);
 
   Serial.println("Setup complete");
   Serial.println();
-  Serial.println("Commands:");
+  Serial.println("Click the button to select one of the attached servos.");
+  Serial.println("Turn the potentiometer to move the selected servo.");
+  Serial.println();
+  Serial.println("Serial commands supported:");
   Serial.println("  <servo> <angle> - move a servo to an angle (from 0 to 180), for example:");
   Serial.println("    Base 10");
   Serial.println("    Shoulder 20");
@@ -56,23 +55,20 @@ void loop()
 
     if (strcmp(input, "RESET") == 0)
     {
-      Serial.println("Moving all servos to default angle...");
-
-      base.write(90);
-      shoulder.write(90);
-      elbow.write(90);
-      claw.write(25);
-
-      Serial.println("Success!");
+      calibrator.resetServos();
     }
     else
     {
-      ServoCommand *command = parseServoCommand(input);
+      char name[16]; // Should be large enough to accommodate the servo name.
+      int angle;
 
-      if (command != nullptr)
+      if (sscanf(input, "%s %d", name, &angle) == 2)
       {
-        command->servo->write(command->angle);
-        Serial.println("Success!");
+        calibrator.setAngle(name, angle);
+      }
+      else
+      {
+        Serial.println("Unknown command");
       }
     }
 
@@ -83,6 +79,10 @@ void loop()
   if (button.wasClicked())
   {
     Serial.println("Button clicked");
+
+    calibrator.cycleServo();
+
+    Serial.println();
   }
 
   // React to potentiometer changes.
@@ -92,6 +92,11 @@ void loop()
 
     Serial.print("Potentiometer value changed to ");
     Serial.println(value);
+
+    // The potentiometer value (from 0 to 1023) is mapped to an angle (from 0 to 180) supported by the Servo library.
+    calibrator.setAngle(map(value, 0, 1023, 0, 180));
+
+    Serial.println();
   }
 }
 
@@ -137,63 +142,4 @@ char *readSerial()
   }
 
   return nullptr;
-}
-
-/**
- * Parses a command string to identify the servo (Base, Shoulder, Elbow, or Claw) and the desired angle (0-180
- * degrees). If valid, returns a pointer to the corresponding Servo object and the angle. If the command or angle is
- * invalid, it prints an error message and returns a `nullptr` and `-1`.
- */
-ServoCommand *parseServoCommand(const char *command)
-{
-  static ServoCommand output;
-  char name[16]; // Should be large enough to accommodate the servo name.
-  int angle;
-
-  if (sscanf(command, "%s %d", name, &angle) != 2)
-  {
-    Serial.println("ERROR: Unknown command!");
-
-    return nullptr;
-  }
-
-  if (strcmp(name, "Base") == 0)
-  {
-    output.servo = &base;
-  }
-  else if (strcmp(name, "Shoulder") == 0)
-  {
-    output.servo = &shoulder;
-  }
-  else if (strcmp(name, "Elbow") == 0)
-  {
-    output.servo = &elbow;
-  }
-  else if (strcmp(name, "Claw") == 0)
-  {
-    output.servo = &claw;
-  }
-  else
-  {
-    Serial.println("ERROR: Unknown servo!");
-
-    return nullptr;
-  }
-
-  if (angle < 0 || angle > 180)
-  {
-    Serial.println("ERROR: Invalid angle!");
-
-    return nullptr;
-  }
-
-  output.angle = angle;
-
-  Serial.print("Moving servo \"");
-  Serial.print(name);
-  Serial.print("\" to ");
-  Serial.print(angle);
-  Serial.println("°...");
-
-  return &output;
 }
