@@ -2,8 +2,10 @@
 #include <Servo.h>
 
 #include "Button.h"
+#include "Potentiometer.h"
 
 Button button(2);
+Potentiometer potentiometer(A0);
 
 Servo base, shoulder, elbow, claw;
 
@@ -44,6 +46,7 @@ void setup()
 
 void loop()
 {
+  // React to Serial input.
   char *input = readSerial();
 
   if (input != nullptr)
@@ -80,6 +83,15 @@ void loop()
   if (button.wasClicked())
   {
     Serial.println("Button clicked");
+  }
+
+  // React to potentiometer changes.
+  if (potentiometer.wasChanged())
+  {
+    int value = potentiometer.getValue();
+
+    Serial.print("Potentiometer value changed to ");
+    Serial.println(value);
   }
 }
 
