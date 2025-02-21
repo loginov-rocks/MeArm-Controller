@@ -17,10 +17,10 @@ precise servo positioning and calibration.
 ## Hardware Requirements
 
 - Microcontroller supporting Arduino framework.
-- Push button (connected to pin 2 by default): [scheme](https://docs.arduino.cc/built-in-examples/digital/Button/).
-- Potentiometer (connected to pin A0 by default):
+- Push button (connected to pin `2` by default): [scheme](https://docs.arduino.cc/built-in-examples/digital/Button/).
+- Potentiometer (connected to pin `A0` by default):
   [scheme](https://docs.arduino.cc/learn/electronics/potentiometer-basics/).
-- One or more servo motors (I use 4x SG90 connected to pins 6, 9, 10, and 11):
+- One or more servo motors (I use 4 x SG90 connected to pins `6`, `9`, `10`, and `11`):
   [scheme](https://docs.arduino.cc/tutorials/generic/basic-servo-control/).
 - Appropriate power supply for servos (I use a 9V 3A AC/DC power supply with a power module for this setup).
 
@@ -32,11 +32,11 @@ precise servo positioning and calibration.
 2. Turn the potentiometer to adjust the position of the currently selected servo (0-180 degrees).
 3. Click through all servos to disengage control.
 
-The system provides feedback via Serial (9600 baud by default) for all operations.
+The system provides feedback via Serial (`9600` baud by default) for all operations.
 
 ### Serial Commands
 
-The following commands are supported (send them via Serial at 9600 baud by default):
+The following commands are supported (send them via Serial at `9600` baud by default):
 
 - `<servo_name> <angle>` - set the specific servo to given angle (0-180), for example:
   - `Base 90`
@@ -84,12 +84,12 @@ Main class for managing multiple servos:
 ```cpp
 Calibrator calibrator;
 
-calibrator.attachServo(pin, "ServoName", defaultAngle);
+calibrator.attachServo(6, "Base", 90);
 
-calibrator.cycleServo();              // Select next servo
-calibrator.setAngle(45);              // Set current servo angle
-calibrator.setAngle("ServoName", 90); // Set specific servo angle
-calibrator.resetServos();             // Reset all servos to default
+calibrator.cycleServo();         // Select next servo
+calibrator.setAngle(45);         // Set current servo angle
+calibrator.setAngle("Base", 90); // Set specific servo angle
+calibrator.resetServos();        // Reset all servos to default
 ```
 
 ## Example Setup for 4-DOF Robot Arm
