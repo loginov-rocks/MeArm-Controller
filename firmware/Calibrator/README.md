@@ -1,102 +1,124 @@
-# Arduino Robotic Arm Controller
+# Calibrator
 
-A robust, object-oriented implementation for controlling a 4-DOF robotic arm using Arduino. The system supports both
-manual control through a potentiometer and button interface, as well as programmatic control via serial commands.
+PlatformIO project for microcontrollers supporting Arduino framework for calibrating multiple servo motors using a
+combination of hardware controls (button + potentiometer) and serial commands. While originally designed for
+calibrating 4-DOF robot arms like [MeArm](https://github.com/MeArm/MeArm), it can be adapted for any project requiring
+precise servo positioning and calibration.
 
 ## Features
 
-- Control 4 or more named servos (Base, Shoulder, Elbow, and Claw)
-- Dual control interfaces:
-  - Hardware interface with button selection and potentiometer control
-  - Serial command interface for programmatic control
-- Robust debouncing for both digital and analog inputs
-- Dynamic servo management with named positions
-- Error checking and validation for all inputs
-- Detailed serial output for monitoring and debugging
+- Control multiple servos with a single potentiometer and button.
+- Direct servo control via serial commands.
+- Debounced button input handling.
+- Smooth potentiometer reading with adjustable deviation threshold.
+- Servo position memory and reset functionality.
+- Detailed serial feedback for all operations.
 
 ## Hardware Requirements
 
-- Arduino board (tested on Arduino Uno)
-- 4 servo motors
-- 1 pushbutton
-- 1 potentiometer (10kΩ recommended)
-- Appropriate power supply for servos
-
-## Pin Configuration
-
-- Button: Pin 2 (Digital)
-- Potentiometer: Pin A0 (Analog)
-- Servo Motors:
-  - Base: Pin 6
-  - Shoulder: Pin 9
-  - Elbow: Pin 10
-  - Claw: Pin 11
-
-## Installation
-
-1. Clone this repository
-2. Open the project in Arduino IDE or Platform IO
-3. Upload to your Arduino board
+- Microcontroller supporting Arduino framework.
+- Push button (connected to pin 2 by default): [scheme](https://docs.arduino.cc/built-in-examples/digital/Button/).
+- Potentiometer (connected to pin A0 by default):
+  [scheme](https://docs.arduino.cc/learn/electronics/potentiometer-basics/).
+- One or more servo motors (I use 4x SG90 connected to pins 6, 9, 10, and 11):
+  [scheme](https://docs.arduino.cc/tutorials/generic/basic-servo-control/).
+- Appropriate power supply for servos (I use a 9V 3A AC/DC power supply with a power module for this setup).
 
 ## Usage
 
 ### Hardware Control
 
-1. Click the button to cycle through servo selection
-2. Turn the potentiometer to adjust the selected servo's position
-3. The system automatically maps the potentiometer's range (0-1023) to servo angles (0-180)
+1. Click the button to cycle through the configured servos.
+2. Turn the potentiometer to adjust the position of the currently selected servo (0-180 degrees).
+3. Click through all servos to disengage control.
+
+The system provides feedback via Serial (9600 baud by default) for all operations.
 
 ### Serial Commands
 
-Connect to the Arduino's serial port (9600 baud) to send commands:
+The following commands are supported (send them via Serial at 9600 baud by default):
 
-```
-<servo> <angle> - Move a specific servo to an angle (0-180)
-Examples:
-  Base 90
-  Shoulder 45
-  Elbow 120
-  Claw 30
-
-RESET - Return all servos to their default positions
-```
-
-### Serial Output
-
-The system provides detailed feedback through the serial interface:
-
-- Startup configuration
-- Servo attachment confirmation
-- Current servo selections
-- Position changes
-- Error messages
+- `<servo_name> <angle>` - set the specific servo to given angle (0-180), for example:
+  - `Base 90`
+  - `Shoulder 45`
+  - `Elbow 120`
+  - `Claw 30`
+- `RESET` - return all servos to their default positions (configured by default).
 
 ## Classes
 
 ### Button
 
-Handles digital input with debouncing for the servo selection button.
+A class for handling button input with debouncing:
+
+```cpp
+Button button(2);
+
+button.setDebounceDelay(50); // Optional, default 50 ms
+
+if (button.wasClicked()) {
+  // Handle click.
+}
+```
 
 ### Potentiometer
 
-Manages analog input with smoothing and debouncing for position control.
+A class for reading analog input with smoothing and threshold detection:
+
+```cpp
+Potentiometer potentiometer(A0);
+
+potentiometer.setReadingDeviation(5); // Optional, default 5 units
+potentiometer.setDebounceDelay(20);   // Optional, default 20 ms
+
+if (potentiometer.wasChanged()) {
+  int value = potentiometer.getValue();
+  // Handle value change.
+}
+```
 
 ### Calibrator
 
-Manages servo motors with support for:
+Main class for managing multiple servos:
 
-- Named servo positions
-- Default angles
-- Dynamic servo cycling
-- Position control
-- Group reset functionality
+```cpp
+Calibrator calibrator;
 
-## Error Handling
+calibrator.attachServo(pin, "ServoName", defaultAngle);
 
-The system includes comprehensive error checking for:
+calibrator.cycleServo();              // Select next servo
+calibrator.setAngle(45);              // Set current servo angle
+calibrator.setAngle("ServoName", 90); // Set specific servo angle
+calibrator.resetServos();             // Reset all servos to default
+```
 
-- Invalid servo angles
-- Duplicate servo names or pins
-- Invalid serial commands
-- Buffer overflow protection
-- Hardware configuration conflicts
+## Example Setup for 4-DOF Robot Arm
+
+```cpp
+#include <Arduino.h>
+
+#include "Button.h"
+#include "Calibrator.h"
+#include "Potentiometer.h"
+
+Button button(2);
+Calibrator calibrator;
+Potentiometer potentiometer(A0);
+
+void setup() {
+  Serial.begin(9600);
+
+  calibrator.attachServo(6, "Base", 90);
+  calibrator.attachServo(9, "Shoulder", 90);
+  calibrator.attachServo(10, "Elbow", 90);
+  calibrator.attachServo(11, "Claw", 25);
+}
+```
+
+## Implementation Details
+
+- Servo positions are tracked and maintained even when cycling through different servos.
+- Potentiometer readings are mapped from 0-1023 to 0-180 degrees.
+- Button debouncing prevents false triggers.
+- Potentiometer has an adjustable deviation threshold to prevent unnecessary updates.
+- Serial command parsing includes trim for reliable operation.

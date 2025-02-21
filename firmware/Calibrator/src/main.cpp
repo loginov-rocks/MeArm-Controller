@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Servo.h>
 
 #include "Button.h"
 #include "Calibrator.h"
